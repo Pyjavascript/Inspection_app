@@ -2,6 +2,7 @@ const User = require("../models/User");
 const { Employee, Manager } = require("../models/RoleUsers");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 // REGISTER
 exports.register = async (req, res) => {
@@ -23,14 +24,12 @@ exports.register = async (req, res) => {
 
     // also save in role-based collection
     if (designation === "employee") {
-      const emp = new Employee({ companyId, username, designation, password: hashedPassword });
-      await emp.save();
+      const emp = await Employee.create({ companyId, username, designation, password: hashedPassword });
     } else if (designation === "manager") {
-      const mgr = new Manager({ companyId, username, designation, password: hashedPassword });
-      await mgr.save();
+      const mgr = await Manager.create({ companyId, username, designation, password: hashedPassword });
     }
 
-    res.status(201).json({ msg: "User registered successfully" });
+    res.status(201).json({ msg: "User registered successfully", user: { companyId, username, designation } });
   } catch (err) {
     res.status(500).json({ msg: "Server error", error: err.message });
   }
