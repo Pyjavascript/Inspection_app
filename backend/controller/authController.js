@@ -19,8 +19,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // save in main collection
-    const newUser = new User({ companyId, username, designation, password: hashedPassword });
-    await newUser.save();
+    const newUser = await User.create({ companyId, username, designation, password: hashedPassword });
 
     // also save in role-based collection
     if (designation === "employee") {
@@ -46,6 +45,7 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
+    console.log("JWT_SECRET from env:", process.env.JWT_SECRET);
     const token = jwt.sign(
       { id: user._id, companyId: user.companyId, designation: user.designation },
       process.env.JWT_SECRET,
