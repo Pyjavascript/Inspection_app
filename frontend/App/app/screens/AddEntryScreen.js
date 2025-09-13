@@ -29,7 +29,7 @@ export default function AddEntryScreen({ navigation }) {
 
   const handleSubmit = async () => {
     try {
-      await axios.post(`${BASE_URL}/api/report`, form);
+      await axios.post(`${BASE_URL}api/report/create`, form);
       alert("✅ Entry added successfully!");
       navigation.goBack();
     } catch (err) {
