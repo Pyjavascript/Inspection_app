@@ -4,6 +4,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+const secret = process.env.JWT_SECRET; 
+
 // REGISTER
 exports.register = async (req, res) => {
   try {
@@ -45,10 +47,11 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
-    console.log("JWT_SECRET from env:", process.env.JWT_SECRET);
+    console.log("Using secret in login:", process.env.JWT_SECRET ? "✅ Loaded" : "❌ Missing");
+
     const token = jwt.sign(
       { id: user._id, companyId: user.companyId, designation: user.designation },
-      process.env.JWT_SECRET,
+      secret,
       { expiresIn: "1d" }
     );
 
