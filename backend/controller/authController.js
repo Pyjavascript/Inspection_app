@@ -70,64 +70,76 @@ const secret = process.env.JWT_SECRET;
 // };
 
 async function userRegister(req, res) {
-  const { companyId, username, designation, password } = req.body;
+  try {
+    const { companyId, username, designation, password } = req.body;
 
-  const UserAlready = await User.findOne({ companyId });
-  if (UserAlready) {
-    return res.status(400).json({ message: "User Already Exists" });
+    const UserAlready = await User.findOne({ companyId });
+    if (UserAlready) {
+      return res.status(400).json({ message: "User Already Exists" });
+    }
+
+    const hashPass = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      companyId,
+      username,
+      designation,
+      password: hashPass,
+    });
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET
+    );
+    res.cookie("cookie", token);
+
+    res.status(201).json({
+      message: "User Registered Successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        designation: user.designation,
+        companyId: user.companyId,
+      },
+    });
+  } catch (err) {
+    console.error("Register error:", err); // <-- log error
+    res.status(500).json({ message: "Server error", error: err.message });
   }
-
-  const hashPass = await bcrypt.hash(password, 10);
-  const user = await userModel.create({
-    companyId,
-    username,
-    designation,
-    password: hashPass,
-  });
-
-  const token = jwt.sign(
-    {
-      id: user._id,
-    },
-    process.env.JWT_SECRET
-  );
-  res.cookie("cookie", token);
-
-  res.status(201).json({
-    message: "User Registered Successfully",
-    user: {
-      _id: user._id,
-      username: user.username,
-      designation: user.designation,
-      companyId: user.companyId,
-    },
-  });
 }
 
 async function loginUser(req, res) {
-  const { companyId, password } = req.body;
+  try {
+    const { companyId, password } = req.body;
 
-  const user = await User.findOne({ companyId });
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    const user = await User.findOne({ companyId });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password); // <-- add await
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+    res.cookie("cookie", token);
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        username: user.username,
+        designation: user.designation,
+        companyId: user.companyId,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
-  const isMatch = bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ message: "Invalid credentials" });
-  }
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-
-  res.cookie("cookie", token);
-
-  return res.status(200).json({
-    message: "Login successful",
-    user: {
-      _id: user._id,
-      username: user.username,
-      designation: user.designation,
-      companyId: user.companyId,
-    },
-  });
 }
 
 module.exports = { userRegister, loginUser };
