@@ -6,6 +6,8 @@ const app = express();
 const cors = require('cors');
 app.use(cors())
 require("dotenv").config()
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
 
 
 mongoose.connect(process.env.MONGO_URI)

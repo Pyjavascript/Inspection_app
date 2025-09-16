@@ -3,19 +3,45 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  Button,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const Login = ({ navigation }) => {
-  const [text, setText] = useState('');
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
 
-  const LoginSubmit = () => {
-    console.log('Login Submit');
-    navigation.navigate('Dashboard');
-  };
+  const LoginSubmit = async () => {
+  try {
+    const res = await axios.post(
+      'https://inspection-app-mapv.onrender.com/api/auth/login',
+      {
+        companyId: userId,
+        password: password,
+      }
+    );
+
+    if (res.data.message === 'Login successful') {
+      console.log('Login Success', res.data);
+
+      // 🎯 save token to AsyncStorage
+      await AsyncStorage.setItem("token", res.data.token);
+
+      Alert.alert('Login Successful', 'Welcome back!', [
+        { text: 'OK', onPress: () => navigation.replace('Dashboard') },
+      ]);
+    } else {
+      Alert.alert('Login Failed', res.data.message || 'Invalid credentials');
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    Alert.alert('Error', 'Something went wrong. Please try again.');
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -29,44 +55,40 @@ const Login = ({ navigation }) => {
           Go Back
         </Text>
       </View>
+
       <View style={styles.form}>
-        <View style={{gap:20}}>
-            <Text style={styles.welcomeText}>
-          Welcome back! Glad to see you, Again!
-        </Text>
-        <View>
-            <TextInput
-          style={styles.input}
-          placeholder="Enter your username"
-          placeholderTextColor={'#999'}
-          value={text}
-          onChangeText={setText}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your ID"
-          placeholderTextColor={'#999'}
-          value={text}
-          onChangeText={setText}
-        />
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#22659c',
-            padding: 15,
-            borderRadius: 8,
-            alignItems: 'center',
-          }}
-          onPress={LoginSubmit}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-            Login
+        <View style={{ gap: 20 }}>
+          <Text style={styles.welcomeText}>
+            Welcome back! Glad to see you, Again!
           </Text>
-        </TouchableOpacity>
+
+          <View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your ID"
+              placeholderTextColor={'#999'}
+              value={userId}
+              onChangeText={setUserId}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your Password"
+              secureTextEntry={true}
+              placeholderTextColor={'#999'}
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <TouchableOpacity style={styles.loginBtn} onPress={LoginSubmit}>
+              <Text style={styles.loginBtnText}>Login</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        </View>
+
         <View style={{ alignItems: 'center', marginTop: 20 }}>
           <Text>
-            Dont have account?{' '}
+            Don’t have account?{' '}
             <Text
               style={{ color: '#007bff' }}
               onPress={() => {
@@ -94,7 +116,6 @@ const styles = StyleSheet.create({
   top: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'start',
     marginBottom: 20,
     paddingTop: 40,
   },
@@ -105,7 +126,6 @@ const styles = StyleSheet.create({
     padding: 8,
     paddingVertical: 5,
     borderRadius: 8,
-    fontWeight: 'light',
   },
   welcomeText: {
     fontSize: 28,
@@ -122,8 +142,18 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: 50,
-    display: 'flex',
     flexDirection: 'column',
     gap: 15,
+  },
+  loginBtn: {
+    backgroundColor: '#22659c',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  loginBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
